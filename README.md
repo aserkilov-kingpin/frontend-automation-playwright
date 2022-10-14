@@ -1,7 +1,7 @@
 ## Usage
 ### Locally
 1. Clone the repo
-2. `cd backend-automation`
+2. `cd frontend-automation-playwright`
 3. Setup Virtual Environment
    - Linux/Mac:
      * `scripts/setup_env.sh`  
@@ -9,7 +9,7 @@
      * `scripts/setup_env.bat`
    - Windows Powershell:
      * `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-     * `.\scripts\setup_env.bat`
+     * `scripts/setup_env.ps1`
 4. Enter the Python VENV
    - Linux/Mac:
      * `source ~/python_core_env/bin/activate`

@@ -4,10 +4,10 @@ from typing import List, Optional
 
 import requests
 
-from core.apis.rest.rest_base import RestBase
-from core.apis.rest.session_auth_base import SessionAuthBase
-from core.common.log_handler import LogHandler
-from core.interfaces.admin.admin_base_interface import AdminBaseInterface
+from apis.rest.rest_base import RestBase
+from apis.rest.session_auth_base import SessionAuthBase
+from common.log_handler import LogHandler
+from apis.interfaces.admin.admin_base_interface import AdminBaseInterface
 
 log = LogHandler.get_module_logger(__name__)
 

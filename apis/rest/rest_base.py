@@ -2,7 +2,7 @@ import json
 import logging
 
 import requests
-from core.common.log_handler import LogHandler
+from common.log_handler import LogHandler
 from requests.auth import HTTPBasicAuth
 
 log = LogHandler.get_module_logger(__name__)

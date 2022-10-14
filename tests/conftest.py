@@ -36,6 +36,8 @@ import tempfile
 
 from pymongo import MongoClient
 
+from tests.consts import MONGODB_CONNECTION_STRING
+
 log = LogHandler.get_module_logger(__name__)
 artifacts_folder = tempfile.TemporaryDirectory(prefix="playwright-pytest-")
 
@@ -254,6 +256,7 @@ def browser_context(
     pytestconfig: Any,
     request: pytest.FixtureRequest,
     retailer_login,
+    brand_login
 ):
     pages: List[Page] = []
     retailer_context = browser.new_context(
@@ -334,6 +337,5 @@ def browser_context(
 
 @pytest.fixture(scope="session")
 def kingpin_db():
-    CONNECTION_STRING = "mongodb+srv://devUser:ghzATDgDhDHcZvFP@dev.arg3n.mongodb.net/kingpin?retryWrites=true&w=majority"
-    client = MongoClient(CONNECTION_STRING)
+    client = MongoClient(MONGODB_CONNECTION_STRING)
     yield client.get_database("kingpin")

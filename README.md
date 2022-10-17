@@ -12,11 +12,14 @@
      * `scripts/setup_env.ps1`
 4. Enter the Python VENV
    - Linux/Mac:
-     * `source ~/python_core_env/bin/activate`
+     * `source ~/python_env_playwright/bin/activate`
    - Windows CMD:
-     * `%HOMEDRIVE%%HOMEPATH%\python_core_env\Scripts\activate.bat`
+     * `%HOMEDRIVE%%HOMEPATH%\python_env_playwright\Scripts\activate.bat`
    - Windows Powershell:
-     * `&$env:userprofile\python_core_env\Scripts\Activate.ps1`
-5. Run tests
-   * `pytest --host=api.dev.kingpin.global --username=${Your_login} --password=${Your_password} --log-cli-level=INFO -s core/tests/`
+     * `&$env:userprofile\python_env_playwright\Scripts\Activate.ps1`
+5. Upgrade packages:
+   - Windows Powershell:
+     * `pip freeze | %{$_.split('==')[0]} | %{pip install --upgrade $_}`
+6. Run tests
+   * `pytest --base-url=https://dev.kingpin.global --host=https://dev.kingpin.global --api=https://api-dev.kingpin.global --retailer-username=${email} --retailer-password=${password} --brand-username=${email} --brand-password=${password} --log-cli-level=INFO -s tests\portal --no-header`
 

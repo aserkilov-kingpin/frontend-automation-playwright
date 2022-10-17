@@ -154,6 +154,7 @@ def portal_api_client(pytestconfig) -> PortalClient:
 
 @pytest.fixture(scope="session")
 def retailer_login():
+    path = "retailer_context.json"
     response = requests.post(
         pytest.api + "/users/login",
         data={"email": pytest.retailer_username, "password": pytest.retailer_password},
@@ -176,12 +177,15 @@ def retailer_login():
             }
         ],
     }
-    with open("retailer_context.json", "w") as outfile:
+    with open(path, "w") as outfile:
         json.dump(json_dict, outfile)
+    yield
+    os.remove(path)
 
 
 @pytest.fixture(scope="session")
 def brand_login():
+    path = "brand_context.json"
     response = requests.post(
         pytest.api + "/users/login",
         data={"email": pytest.brand_username, "password": pytest.brand_password},
@@ -204,8 +208,10 @@ def brand_login():
             }
         ],
     }
-    with open("brand_context.json", "w") as outfile:
+    with open(path, "w") as outfile:
         json.dump(json_dict, outfile)
+    yield
+    os.remove(path)
 
 
 @pytest.fixture(scope="session")
@@ -256,7 +262,7 @@ def browser_context(
     pytestconfig: Any,
     request: pytest.FixtureRequest,
     retailer_login,
-    brand_login
+    brand_login,
 ):
     pages: List[Page] = []
     retailer_context = browser.new_context(

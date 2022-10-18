@@ -176,7 +176,7 @@ class RestBase:
     def put(
         self, uri: str, data: dict = None, timeout: tuple = None
     ) -> requests.Response:
-        """Send a REST POST
+        """Send a REST PUT
 
         :param uri: destination to send the request
         :param data: data to include in the body
@@ -192,6 +192,38 @@ class RestBase:
             )
         else:
             response = requests.put(
+                self._base_uri + uri,
+                headers=self._mod_headers,
+                json=data,
+                verify=False,
+                timeout=timeout,
+            )
+
+        log.debug(
+            f"Response status: {response.status_code} Elapsed Time: {response.elapsed}"
+        )
+
+        return response
+
+    def patch(
+        self, uri: str, data: dict = None, timeout: tuple = None
+    ) -> requests.Response:
+        """Send a REST PATCH
+
+        :param uri: destination to send the request
+        :param data: data to include in the body
+        :param timeout: single int for both connect and read, or tuple (connect, read)
+        :return: requests response object returned by delete call
+        """
+        log.debug(f"Performing PATCH to URI: {uri} Timeout: {timeout} Data: {data}")
+        if not timeout:
+            timeout = self.timeout
+        if self._is_session:
+            response = self._session.patch(
+                self._base_uri + uri, json=data, headers=self._mod_headers, verify=False
+            )
+        else:
+            response = requests.patch(
                 self._base_uri + uri,
                 headers=self._mod_headers,
                 json=data,

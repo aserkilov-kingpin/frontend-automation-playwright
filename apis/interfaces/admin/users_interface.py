@@ -14,13 +14,46 @@ class UsersInterface(object):
     def __init__(self, client: "AdminClient"):
         self.client = client
 
-    def get(self) -> dict:
-        """Get all users
+    def get_admins(self) -> dict:
+        """Get all admin users
 
         :return: dict with user details
         """
         uri = "/adminusers" + self.client.unpack_parameters()
         response = self.client.get(uri)
+        if self.client.raise_errors:
+            response.raise_for_status()
+        return response.json()
+
+    def get_users(self, **kwargs) -> dict:
+        """Get all users
+
+        :return: dict with user details
+        """
+        uri = "/users/list" + self.client.unpack_parameters(kwargs)
+        response = self.client.get(uri)
+        if self.client.raise_errors:
+            response.raise_for_status()
+        return response.json()
+
+    def get_user(self, user_id: str) -> dict:
+        """Get user details
+
+        :return: dict with user details
+        """
+        uri = f"/users/{user_id}"
+        response = self.client.get(uri)
+        if self.client.raise_errors:
+            response.raise_for_status()
+        return response.json()
+
+    def edit_user(self, user_id: str, body) -> dict:
+        """Update user
+
+        :return: dict with response
+        """
+        uri = f"/users/{user_id}"
+        response = self.client.patch(uri, body)
         if self.client.raise_errors:
             response.raise_for_status()
         return response.json()

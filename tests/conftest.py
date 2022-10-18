@@ -47,6 +47,16 @@ def pytest_addoption(parser):
     group_admin.addoption("--host", action="store", help="Frontend host address")
     group_admin.addoption("--api", action="store", help="Backend host address")
     group_admin.addoption(
+        "--api-username",
+        action="store",
+        help="API Username",
+    )
+    group_admin.addoption(
+        "--api-password",
+        action="store",
+        help="API Password",
+    )
+    group_admin.addoption(
         "--retailer-username",
         action="store",
         help="Retailer Username",
@@ -81,6 +91,14 @@ def pytest_configure(config):
         api = config.getoption("api")
     else:
         api = getenv("api")
+    if config.getoption("--api-username"):
+        api_username = config.getoption("api_username")
+    else:
+        api_username = getenv("api_username")
+    if config.getoption("--api-password"):
+        api_password = config.getoption("api_password")
+    else:
+        api_password = getenv("api_password")
     if config.getoption("--retailer-username"):
         retailer_username = config.getoption("retailer_username")
     else:
@@ -103,6 +121,10 @@ def pytest_configure(config):
         print("No host (--host option or 'host' env variable)")
     if api is None:
         print("No api (--api option or 'api' env variable)")
+    if api_username is None:
+        print("No api_username (--api-username option or 'api_username' env variable)")
+    if api_password is None:
+        print("No api_password (--api-password option or 'api_password' env variable)")
     if retailer_username is None:
         print(
             "No retailer_username (--retailer-username option or 'retailer_username' env variable)"
@@ -122,6 +144,8 @@ def pytest_configure(config):
     pytest.base_url = base_url
     pytest.host = host
     pytest.api = api
+    pytest.api_username = api_username
+    pytest.api_password = api_password
     pytest.retailer_username = retailer_username
     pytest.retailer_password = retailer_password
     pytest.brand_username = brand_username
@@ -130,9 +154,9 @@ def pytest_configure(config):
 
 @pytest.fixture(scope="session")
 def admin_api_client(pytestconfig) -> AdminClient:
-    host = pytest.host
-    username = pytestconfig.getoption("username")
-    password = pytestconfig.getoption("password")
+    host = pytest.api
+    username = pytest.api_username
+    password = pytest.api_password
     try:
         app = AdminClient(host=host, username=username, password=password)
     except exceptions.ConnectionError as e:
@@ -153,10 +177,10 @@ def portal_api_client(pytestconfig) -> PortalClient:
 
 
 @pytest.fixture(scope="session")
-def retailer_login():
+def retailer_login(admin_api_client):
     path = "retailer_context.json"
     response = requests.post(
-        pytest.api + "/users/login",
+        f"https://{pytest.api}/users/login",
         data={"email": pytest.retailer_username, "password": pytest.retailer_password},
     )
     token = response.json()["data"]["token"]
@@ -187,7 +211,7 @@ def retailer_login():
 def brand_login():
     path = "brand_context.json"
     response = requests.post(
-        pytest.api + "/users/login",
+        f"https://{pytest.api}/users/login",
         data={"email": pytest.brand_username, "password": pytest.brand_password},
     )
     token = response.json()["data"]["token"]

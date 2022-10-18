@@ -1,4 +1,5 @@
 import pytest
+from playwright.sync_api import expect
 
 from common.log_handler import LogHandler
 from tests.consts import EMAIL_DOMAIN
@@ -45,12 +46,20 @@ def create_user(page, kingpin_db, request):
 
 
 class TestUsers:
-    username = "automation-retailer-" + get_current_datetime()
-    password = pytest.retailer_password
+    retailer_username = "automation-retailer-" + get_current_datetime()
+    retailer_password = pytest.retailer_password
+    brand_username = "automation-brand-" + get_current_datetime()
+    brand_password = pytest.brand_password
 
     @pytest.mark.parametrize(
         "create_user",
-        [{"username": username, "password": password, "role": "Retailer"}],
+        [
+            {
+                "username": retailer_username,
+                "password": retailer_password,
+                "role": "Retailer",
+            }
+        ],
         indirect=True,
     )
     def test_retailer_registers(self, page, kingpin_db, create_user):
@@ -59,12 +68,9 @@ class TestUsers:
         else:
             pytest.fail("None user object")
 
-    username = "automation-brand-" + get_current_datetime()
-    password = pytest.brand_password
-
     @pytest.mark.parametrize(
         "create_user",
-        [{"username": username, "password": password, "role": "Brand"}],
+        [{"username": brand_username, "password": brand_password, "role": "Brand"}],
         indirect=True,
     )
     def test_brand_registers(self, page, kingpin_db, create_user):
@@ -72,3 +78,45 @@ class TestUsers:
             assert create_user.get("role") == "brand"
         else:
             pytest.fail("None user object")
+
+    @pytest.mark.parametrize(
+        "create_user",
+        [
+            {
+                "username": retailer_username,
+                "password": retailer_password,
+                "role": "Retailer",
+            }
+        ],
+        indirect=True,
+    )
+    def test_retailer_login(self, page, kingpin_db, create_user, admin_api_client):
+        body = {"status": "approved"}
+        admin_api_client.users.edit_user(str(create_user["_id"]), body=body)
+        email = f"{self.retailer_username}@{EMAIL_DOMAIN}"
+        page.goto("/")
+        page.locator('[name="login-email"]').fill(email)
+        page.locator('[name="login-password"]').fill(self.retailer_password)
+        page.locator('[type="submit"]').click()
+        page.wait_for_load_state("networkidle")
+        expect(page).to_have_url("/dashboard")
+        upcoming_locator = page.locator(".for-welcome-content")
+        expect(upcoming_locator).to_be_visible()
+
+    @pytest.mark.parametrize(
+        "create_user",
+        [{"username": brand_username, "password": brand_password, "role": "Brand"}],
+        indirect=True,
+    )
+    def test_brand_login(self, page, kingpin_db, create_user, admin_api_client):
+        body = {"status": "approved"}
+        admin_api_client.users.edit_user(str(create_user["_id"]), body=body)
+        email = f"{self.brand_username}@{EMAIL_DOMAIN}"
+        page.goto("/")
+        page.locator('[name="login-email"]').fill(email)
+        page.locator('[name="login-password"]').fill(self.brand_password)
+        page.locator('[type="submit"]').click()
+        page.wait_for_load_state("networkidle")
+        expect(page).to_have_url("/dashboard")
+        upcoming_locator = page.locator(".for-welcome-content")
+        expect(upcoming_locator).to_be_visible()

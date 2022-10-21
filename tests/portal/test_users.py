@@ -2,7 +2,8 @@ import pytest
 from playwright.sync_api import expect
 
 from common.log_handler import LogHandler
-from tests.consts import EMAIL_DOMAIN
+from common.secret import SecretManager
+from tests.consts import EMAIL_DOMAIN, PASSWORD_RETAILER, PASSWORD_BRAND
 from utils.utils import get_current_datetime
 
 log = LogHandler.get_module_logger(__name__)
@@ -47,9 +48,9 @@ def create_user(page, kingpin_db, request):
 
 class TestUsers:
     retailer_username = "automation-retailer-" + get_current_datetime()
-    retailer_password = pytest.retailer_password
+    retailer_password = PASSWORD_RETAILER
     brand_username = "automation-brand-" + get_current_datetime()
-    brand_password = pytest.brand_password
+    brand_password = PASSWORD_BRAND
 
     @pytest.mark.parametrize(
         "create_user",
@@ -100,8 +101,8 @@ class TestUsers:
         page.locator('[type="submit"]').click()
         page.wait_for_load_state("networkidle")
         expect(page).to_have_url("/dashboard")
-        upcoming_locator = page.locator(".for-welcome-content")
-        expect(upcoming_locator).to_be_visible()
+        welcome_locator = page.locator(".for-welcome-content")
+        expect(welcome_locator).to_be_visible()
 
     @pytest.mark.parametrize(
         "create_user",
@@ -118,5 +119,5 @@ class TestUsers:
         page.locator('[type="submit"]').click()
         page.wait_for_load_state("networkidle")
         expect(page).to_have_url("/dashboard")
-        upcoming_locator = page.locator(".for-welcome-content")
-        expect(upcoming_locator).to_be_visible()
+        welcome_locator = page.locator(".for-welcome-content")
+        expect(welcome_locator).to_be_visible()

@@ -36,7 +36,16 @@ import tempfile
 
 from pymongo import MongoClient
 
-from tests.consts import MONGODB_CONNECTION_STRING
+from common.secret import SecretManager
+from tests.consts import (
+    MONGODB_CONNECTION_STRING,
+    LOGIN_ADMIN,
+    PASSWORD_ADMIN,
+    LOGIN_RETAILER,
+    PASSWORD_RETAILER,
+    LOGIN_BRAND,
+    PASSWORD_BRAND,
+)
 
 log = LogHandler.get_module_logger(__name__)
 artifacts_folder = tempfile.TemporaryDirectory(prefix="playwright-pytest-")
@@ -46,36 +55,6 @@ def pytest_addoption(parser):
     group_admin = parser.getgroup("Frontend Testing")
     group_admin.addoption("--host", action="store", help="Frontend host address")
     group_admin.addoption("--api", action="store", help="Backend host address")
-    group_admin.addoption(
-        "--api-username",
-        action="store",
-        help="API Username",
-    )
-    group_admin.addoption(
-        "--api-password",
-        action="store",
-        help="API Password",
-    )
-    group_admin.addoption(
-        "--retailer-username",
-        action="store",
-        help="Retailer Username",
-    )
-    group_admin.addoption(
-        "--retailer-password",
-        action="store",
-        help="Retailer Password",
-    )
-    group_admin.addoption(
-        "--brand-username",
-        action="store",
-        help="Brand Username",
-    )
-    group_admin.addoption(
-        "--brand-password",
-        action="store",
-        help="Brand Password",
-    )
 
 
 def pytest_configure(config):
@@ -91,72 +70,23 @@ def pytest_configure(config):
         api = config.getoption("api")
     else:
         api = getenv("api")
-    if config.getoption("--api-username"):
-        api_username = config.getoption("api_username")
-    else:
-        api_username = getenv("api_username")
-    if config.getoption("--api-password"):
-        api_password = config.getoption("api_password")
-    else:
-        api_password = getenv("api_password")
-    if config.getoption("--retailer-username"):
-        retailer_username = config.getoption("retailer_username")
-    else:
-        retailer_username = getenv("retailer_username")
-    if config.getoption("--retailer-password"):
-        retailer_password = config.getoption("retailer_password")
-    else:
-        retailer_password = getenv("retailer_password")
-    if config.getoption("--brand-username"):
-        brand_username = config.getoption("brand_username")
-    else:
-        brand_username = getenv("brand_username")
-    if config.getoption("--brand-password"):
-        brand_password = config.getoption("brand_password")
-    else:
-        brand_password = getenv("brand_password")
+
     if base_url is None:
         print("No host (--base-url option or 'base_url' env variable)")
     if host is None:
         print("No host (--host option or 'host' env variable)")
     if api is None:
         print("No api (--api option or 'api' env variable)")
-    if api_username is None:
-        print("No api_username (--api-username option or 'api_username' env variable)")
-    if api_password is None:
-        print("No api_password (--api-password option or 'api_password' env variable)")
-    if retailer_username is None:
-        print(
-            "No retailer_username (--retailer-username option or 'retailer_username' env variable)"
-        )
-    if retailer_password is None:
-        print(
-            "No retailer_password (--retailer-password option or 'retailer_password' env variable)"
-        )
-    if brand_username is None:
-        print(
-            "No brand_username (--brand-username option or 'brand_username' env variable)"
-        )
-    if brand_password is None:
-        print(
-            "No brand_password (--brand-password option or 'brand_password' env variable)"
-        )
     pytest.base_url = base_url
     pytest.host = host
     pytest.api = api
-    pytest.api_username = api_username
-    pytest.api_password = api_password
-    pytest.retailer_username = retailer_username
-    pytest.retailer_password = retailer_password
-    pytest.brand_username = brand_username
-    pytest.brand_password = brand_password
 
 
 @pytest.fixture(scope="session")
 def admin_api_client(pytestconfig) -> AdminClient:
     host = pytest.api
-    username = pytest.api_username
-    password = pytest.api_password
+    username = LOGIN_ADMIN
+    password = PASSWORD_ADMIN
     try:
         app = AdminClient(host=host, username=username, password=password)
     except exceptions.ConnectionError as e:
@@ -178,10 +108,12 @@ def portal_api_client(pytestconfig) -> PortalClient:
 
 @pytest.fixture(scope="session")
 def retailer_login(admin_api_client):
+    username = LOGIN_RETAILER
+    password = PASSWORD_RETAILER
     path = "retailer_context.json"
     response = requests.post(
         f"https://{pytest.api}/users/login",
-        data={"email": pytest.retailer_username, "password": pytest.retailer_password},
+        data={"email": username, "password": password},
     )
     token = response.json()["data"]["token"]
     json_dict = {
@@ -209,10 +141,12 @@ def retailer_login(admin_api_client):
 
 @pytest.fixture(scope="session")
 def brand_login():
+    username = LOGIN_BRAND
+    password = PASSWORD_BRAND
     path = "brand_context.json"
     response = requests.post(
         f"https://{pytest.api}/users/login",
-        data={"email": pytest.brand_username, "password": pytest.brand_password},
+        data={"email": username, "password": password},
     )
     token = response.json()["data"]["token"]
     json_dict = {
@@ -240,13 +174,15 @@ def brand_login():
 
 @pytest.fixture(scope="session")
 def retailer_login_ui(browser):
+    username = LOGIN_RETAILER
+    password = PASSWORD_RETAILER
     context = browser.new_context()
     page = context.new_page()
     page.goto(pytest.host)
 
     # Interact with login form
-    page.locator('[name="login-email"]').fill(pytest.retailer_username)
-    page.locator('[name="login-password"]').fill(pytest.retailer_password)
+    page.locator('[name="login-email"]').fill(username)
+    page.locator('[name="login-password"]').fill(password)
     page.locator('[type="submit"]').click()
     page.wait_for_load_state("networkidle")
     storage = context.storage_state(path="retailer_context.json")
@@ -256,27 +192,19 @@ def retailer_login_ui(browser):
 
 @pytest.fixture(scope="session")
 def brand_login_ui(browser):
+    username = LOGIN_BRAND
+    password = PASSWORD_BRAND
     context = browser.new_context()
     page = context.new_page()
     page.goto(pytest.host)
 
     # Interact with login form
-    page.locator('[name="login-email"]').fill(pytest.brand_username)
-    page.locator('[name="login-password"]').fill(pytest.brand_password)
+    page.locator('[name="login-email"]').fill(username)
+    page.locator('[name="login-password"]').fill(password)
     page.locator('[type="submit"]').click()
     page.wait_for_load_state("networkidle")
     storage = context.storage_state(path="brand_context.json")
     context.close()
-
-
-@pytest.fixture()
-def login(page):
-    page.goto("/login")
-    log.info("Running fixture")
-    # Interact with login form
-    page.locator("[name='login-email']").fill(pytest.username)
-    page.locator("[name='login-password']").fill(pytest.password)
-    page.locator("[type='submit']").click()
 
 
 @pytest.fixture(scope="session", autouse=True)

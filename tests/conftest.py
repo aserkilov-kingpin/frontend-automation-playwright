@@ -72,7 +72,7 @@ def pytest_configure(config):
         api = getenv("api")
 
     if base_url is None:
-        print("No host (--base-url option or 'base_url' env variable)")
+        print("No base_url (--base-url option or 'base_url' env variable)")
     if host is None:
         print("No host (--host option or 'host' env variable)")
     if api is None:
@@ -96,9 +96,9 @@ def admin_api_client(pytestconfig) -> AdminClient:
 
 @pytest.fixture(scope="session")
 def portal_api_client(pytestconfig) -> PortalClient:
-    host = pytest.host
-    username = pytestconfig.getoption("username")
-    password = pytestconfig.getoption("password")
+    host = pytest.api
+    username = LOGIN_RETAILER
+    password = PASSWORD_RETAILER
     try:
         app = PortalClient(host=host, username=username, password=password)
     except exceptions.ConnectionError as e:
@@ -107,7 +107,7 @@ def portal_api_client(pytestconfig) -> PortalClient:
 
 
 @pytest.fixture(scope="session")
-def retailer_login(admin_api_client):
+def retailer_login():
     username = LOGIN_RETAILER
     password = PASSWORD_RETAILER
     path = "retailer_context.json"

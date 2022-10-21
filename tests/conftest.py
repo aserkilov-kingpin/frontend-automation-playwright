@@ -14,7 +14,7 @@ import pytest
 import re
 from playwright.sync_api import Playwright, sync_playwright
 from playwright.sync_api import BrowserType
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, NamedTuple
 import shutil
 import os
 import sys
@@ -49,6 +49,11 @@ from tests.consts import (
 
 log = LogHandler.get_module_logger(__name__)
 artifacts_folder = tempfile.TemporaryDirectory(prefix="playwright-pytest-")
+
+
+class Context(NamedTuple):
+    retailer_context: BrowserContext
+    brand_context: BrowserContext
 
 
 def pytest_addoption(parser):
@@ -215,7 +220,7 @@ def browser_context(
     request: pytest.FixtureRequest,
     retailer_login,
     brand_login,
-):
+) -> Context:
     pages: List[Page] = []
     retailer_context = browser.new_context(
         **browser_context_args, storage_state="retailer_context.json"
@@ -224,10 +229,11 @@ def browser_context(
         **browser_context_args, storage_state="brand_context.json"
     )
     contexts = [retailer_context, brand_context]
-    Context = namedtuple("Context", "retailer_context, brand_context")
+    # Context = namedtuple("Context", "retailer_context, brand_context")
     tracing_option = pytestconfig.getoption("--tracing")
     capture_trace = tracing_option in ["on", "retain-on-failure"]
     for context in contexts:
+        context.set_default_navigation_timeout(60000)
         context.on("page", lambda page: pages.append(page))
 
         if capture_trace:

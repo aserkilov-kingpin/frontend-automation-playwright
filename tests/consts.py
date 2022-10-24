@@ -1,3 +1,7 @@
+import os
+
+import pytest
+
 from common.secret import SecretManager
 
 EMAIL_DOMAIN = "kingpin.global"
@@ -8,3 +12,7 @@ LOGIN_RETAILER = "arsenserkilov@kingpin.global"
 PASSWORD_RETAILER = SecretManager().get_password("password.retailer")
 LOGIN_BRAND = "aserkilovbrand@kingpin.global"
 PASSWORD_BRAND = SecretManager().get_password("password.brand")
+COLLECTIONS_PATH = os.path.join(os.path.dirname(__file__), "../test_data/collections")
+MAIN_COLLECTION_PATH = f"{COLLECTIONS_PATH}/main-collection.csv"
+IMAGES_PATH = os.path.join(os.path.dirname(__file__), "../test_data/images")
+MAIN_COLLECTION_IMAGE_PATH = f"{IMAGES_PATH}/main-collection.jpg"

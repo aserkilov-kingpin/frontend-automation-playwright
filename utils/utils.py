@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def login(page):
@@ -16,3 +16,8 @@ def restore_context(browser):
 def get_current_datetime():
     now = datetime.now()
     return now.strftime("%H%M%S%d%m%Y")
+
+
+def get_calendar_next_day():
+    today = datetime.today() + timedelta(days=1)
+    return today.strftime(f"%B {today.day}, %Y")

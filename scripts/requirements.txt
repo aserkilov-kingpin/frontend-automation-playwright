@@ -4,3 +4,4 @@ pytest-playwright
 pymongo[srv]
 pyyaml
 cryptography
+pytest-lazy-fixture

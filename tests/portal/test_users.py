@@ -1,32 +1,24 @@
 import pytest
 from playwright.sync_api import expect
-
 from common.log_handler import LogHandler
-from common.secret import SecretManager
 from tests.consts import EMAIL_DOMAIN, PASSWORD_RETAILER, PASSWORD_BRAND
+from tests.portal.consts import API_URL
 from utils.utils import get_current_datetime
 
 log = LogHandler.get_module_logger(__name__)
 
 
 @pytest.fixture()
-def create_user(page, kingpin_db, request):
+def create_user(browser_context, kingpin_db, page, request) -> dict:
     username = request.param["username"]
     password = request.param["password"]
+    role = request.param["role"]
+    log.info("Running create_user")
     phone = "12345678"
     email = f"{username}@{EMAIL_DOMAIN}"
-    # page.on(
-    #     "response",
-    #     lambda response: print(
-    #         "Response: "
-    #         + response.request.url
-    #         + ", Time: "
-    #         + str(response.request.timing["responseStart"])
-    #     ),
-    # )
     page.goto("/")
     page.locator("[href='/register/']").click()
-    page.locator("button", has_text=request.param["role"]).click()
+    page.locator("button", has_text=role).click()
     page.locator("input").fill(username)
     page.locator("[type='submit']").click()
     page.locator("[placeholder='First Name']").fill(username)
@@ -39,7 +31,7 @@ def create_user(page, kingpin_db, request):
     page.locator("[placeholder='Password']").fill(password)
     page.locator("[placeholder='Re-enter Password']").fill(password)
     page.locator(".checkmark").check()
-    with page.expect_response("**/users/register**") as response_info:
+    with page.expect_response(f"{API_URL}/users/register") as response_info:
         page.locator("[type='submit']").click()
     collection = kingpin_db.get_collection("users")
     yield collection.find_one({"email": email})
@@ -58,12 +50,12 @@ class TestUsers:
             {
                 "username": retailer_username,
                 "password": retailer_password,
-                "role": "Retailer",
+                "role": "Retailer"
             }
         ],
-        indirect=True,
+        indirect=True
     )
-    def test_retailer_registers(self, page, kingpin_db, create_user):
+    def test_retailer_registers(self, create_user):
         if create_user is not None:
             assert create_user.get("role") == "retailer"
         else:
@@ -74,7 +66,7 @@ class TestUsers:
         [{"username": brand_username, "password": brand_password, "role": "Brand"}],
         indirect=True,
     )
-    def test_brand_registers(self, page, kingpin_db, create_user):
+    def test_brand_registers(self, create_user):
         if create_user is not None:
             assert create_user.get("role") == "brand"
         else:
@@ -86,12 +78,12 @@ class TestUsers:
             {
                 "username": retailer_username,
                 "password": retailer_password,
-                "role": "Retailer",
+                "role": "Retailer"
             }
         ],
         indirect=True,
     )
-    def test_retailer_login(self, page, kingpin_db, create_user, admin_api_client):
+    def test_retailer_login(self, page, create_user, admin_api_client):
         body = {"status": "approved"}
         admin_api_client.users.edit_user(str(create_user["_id"]), body=body)
         email = f"{self.retailer_username}@{EMAIL_DOMAIN}"
@@ -109,7 +101,7 @@ class TestUsers:
         [{"username": brand_username, "password": brand_password, "role": "Brand"}],
         indirect=True,
     )
-    def test_brand_login(self, page, kingpin_db, create_user, admin_api_client):
+    def test_brand_login(self, page, create_user, admin_api_client):
         body = {"status": "approved"}
         admin_api_client.users.edit_user(str(create_user["_id"]), body=body)
         email = f"{self.brand_username}@{EMAIL_DOMAIN}"

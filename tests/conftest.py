@@ -54,6 +54,7 @@ artifacts_folder = tempfile.TemporaryDirectory(prefix="playwright-pytest-")
 class Context(NamedTuple):
     retailer_context: BrowserContext
     brand_context: BrowserContext
+    empty_context: BrowserContext
 
 
 def pytest_addoption(parser):
@@ -228,7 +229,8 @@ def browser_context(
     brand_context = browser.new_context(
         **browser_context_args, storage_state="brand_context.json"
     )
-    contexts = [retailer_context, brand_context]
+    empty_context = browser.new_context(**browser_context_args)
+    contexts = [retailer_context, brand_context, empty_context]
     # Context = namedtuple("Context", "retailer_context, brand_context")
     tracing_option = pytestconfig.getoption("--tracing")
     capture_trace = tracing_option in ["on", "retain-on-failure"]
@@ -244,7 +246,7 @@ def browser_context(
                 sources=True,
             )
 
-    yield Context(retailer_context=retailer_context, brand_context=brand_context)
+    yield Context(retailer_context=retailer_context, brand_context=brand_context, empty_context=empty_context)
 
     # If request.node is missing rep_call, then some error happened during execution
     # that prevented teardown, but should still be counted as a failure

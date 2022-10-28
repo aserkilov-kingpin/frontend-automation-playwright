@@ -1,3 +1,4 @@
 import pytest
 
-API_URL = pytest.api
+API_HOST = pytest.api
+API_URL = f"https://{API_HOST}"

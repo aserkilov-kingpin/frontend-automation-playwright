@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from playwright.sync_api import Locator
+
 
 def login(page):
     page.locator('[name="login-email"]').fill(pytest.username)
@@ -21,3 +23,12 @@ def get_current_datetime():
 def get_calendar_next_day():
     today = datetime.today() + timedelta(days=1)
     return today.strftime(f"%B {today.day}, %Y")
+
+
+def locator_gen(locator: Locator):
+    for i in range(0, locator.count()):
+        yield locator.nth(i)
+
+
+def convert_to_currency(number: str):
+    return "${:.2f}".format(float(number))

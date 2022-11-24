@@ -1,7 +1,7 @@
 import pytest
-from playwright.sync_api import expect
+from playwright.sync_api import expect, BrowserContext
 from common.log_handler import LogHandler
-from tests.consts import EMAIL_DOMAIN, PASSWORD_RETAILER, PASSWORD_BRAND
+from tests.consts import EMAIL_DOMAIN, PASSWORD_RETAILER, PASSWORD_BRAND, LOGIN_RETAILER, LOGIN_BRAND
 from tests.portal.consts import API_URL
 from utils.utils import get_current_datetime
 
@@ -38,6 +38,48 @@ def create_user(browser_context, kingpin_db, page, request) -> dict:
     collection.delete_one({"email": email})
 
 
+def check_existing_user(context: BrowserContext, role: str, username: str, password: str):
+    response_list = []
+    context.set_default_navigation_timeout(120000)
+    page = context.new_page()
+    page.on("response", lambda response: response_list.append(response))
+    page.goto("/")
+    page.locator('.cursor-pointer').click()
+    page.locator('[name="login-email"]').fill(username)
+    page.locator('[name="login-password"]').fill(password)
+    page.locator('[type="submit"]').click()
+    page.wait_for_load_state("networkidle")
+    expect(page).to_have_url("/dashboard")
+    order_rows_locator = page.locator(".card table tbody tr")
+    assert order_rows_locator.count() > 1
+    # Wishlists for retailer and collections for brand
+    rows_locator = page.locator(".list-group-item span")
+    assert rows_locator.count() > 1
+    upcoming_rows_locator = page.locator(".upcoming-deadlines table tbody tr")
+    if role == "retailer":
+        assert upcoming_rows_locator.count() > 1
+    else:
+        assert upcoming_rows_locator.count() == 0
+    dashboard_url = f"{API_URL}/dashboard"
+    collection_url = f"{API_URL}/catalog/collection-deadline-list"
+    dashboard_response = next(
+        (
+            response.url
+            for response in response_list
+            if dashboard_url in response.url
+        ),
+        None,
+    )
+    collection_response = next(
+        (
+            response.json()
+            for response in response_list
+            if collection_url in response.url
+        ),
+        None,
+    )
+
+
 class TestUsers:
     retailer_username = "automation-retailer-" + get_current_datetime()
     retailer_password = PASSWORD_RETAILER
@@ -50,10 +92,10 @@ class TestUsers:
             {
                 "username": retailer_username,
                 "password": retailer_password,
-                "role": "Retailer"
+                "role": "Retailer",
             }
         ],
-        indirect=True
+        indirect=True,
     )
     def test_retailer_registers(self, create_user):
         if create_user is not None:
@@ -78,7 +120,7 @@ class TestUsers:
             {
                 "username": retailer_username,
                 "password": retailer_password,
-                "role": "Retailer"
+                "role": "Retailer",
             }
         ],
         indirect=True,
@@ -113,3 +155,10 @@ class TestUsers:
         expect(page).to_have_url("/dashboard")
         welcome_locator = page.locator(".for-welcome-content")
         expect(welcome_locator).to_be_visible()
+
+    def test_existing_retailer_login(self, context):
+        check_existing_user(context, "retailer", LOGIN_RETAILER, PASSWORD_RETAILER)
+
+
+    def test_existing_brand_login(self, context):
+        check_existing_user(context, "brand", LOGIN_BRAND, PASSWORD_BRAND)

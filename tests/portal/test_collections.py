@@ -14,7 +14,12 @@ from tests.consts import (
     MAIN_COLLECTION_IMAGE_PATH,
 )
 from tests.portal.consts import API_URL
-from utils.utils import get_current_datetime, get_calendar_next_day, locator_gen, convert_to_currency
+from utils.utils import (
+    get_current_datetime,
+    get_calendar_next_day,
+    locator_gen,
+    convert_to_currency,
+)
 
 log = LogHandler.get_module_logger(__name__)
 
@@ -59,8 +64,8 @@ def upload_collection(browser_context, admin_api_client):
     page.locator(".logo-preview").set_input_files(MAIN_COLLECTION_IMAGE_PATH)
     page.locator("button", has_text="Crop").click()
     with page.expect_response(
-            lambda response: response.url == f"{API_URL}/catalog/collections"
-                             and response.request.method == "GET"
+        lambda response: response.url == f"{API_URL}/catalog/collections"
+        and response.request.method == "GET"
     ) as response_info:
         page.locator("[type='submit']").click()
         response = response_info.value.json()
@@ -69,13 +74,14 @@ def upload_collection(browser_context, admin_api_client):
             item.get("_id") for item in collections if item.get("description") == name
         )
         log.info(collection_id)
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(5000)
     page.reload()
     yield page, name
     log.info(f"Deleting collection: {name}")
     admin_api_client.collections.delete(collection_id, shouldProceed="true")
 
 
-@pytest.mark.custom
 def test_upload_collection(upload_collection):
     page, name = upload_collection
     expected_number = 20
@@ -99,6 +105,60 @@ def test_upload_collection(upload_collection):
         expected_rrp = str(round(float(expected_rrp)))
         expected_rrp = f"RRP: {convert_to_currency(expected_rrp)}"
         expect(locator).to_be_visible()
+        image_locator = locator.locator("img")
+        expect(image_locator).to_be_visible()
+        name_locator = locator.locator(".product-name a")
+        expect(name_locator).to_have_text(expected_name)
+        code_locator = locator.locator(".product-style-code")
+        expect(code_locator).to_have_text(expected_code)
+        wsp_locator = locator.locator(".product-price span")
+        expect(wsp_locator).to_have_text(expected_wsp)
+        rrp_locator = locator.locator(".product-price-rrp")
+        expect(rrp_locator).to_have_text(expected_rrp)
+        i += 1
+    products_found_locator = page.locator(".d-lg-block span")
+    expect(products_found_locator).to_have_text(f"{expected_number} products found")
+    page.wait_for_load_state("networkidle")
+
+
+@pytest.mark.custom
+def test_retailer_opens_collection(browser_context):
+    brand_name = "Demo Brand Arsen"
+    collection_name = "Demo Brand Arsen Collection"
+    context = browser_context.retailer_context
+    page = context.new_page()
+    page.goto("/")
+    page.locator(".main-menu").hover()
+    page.locator("[href='#'] .menu-title").click()
+    page.locator("[href='/explore'] .menu-title").click()
+    page.locator(".card-title", has_text=brand_name).scroll_into_view_if_needed()
+    page.locator(".ecommerce-card", has=page.locator(".card-title", has_text=brand_name)).locator(".image").hover()
+    page.locator(".card-title", has_text=brand_name).click()
+    collection_locator = page.locator(".card-title", has_text=collection_name)
+    expected_number = 20
+    products_locator = collection_locator.locator(".blog-content-truncate")
+    # expect(products_locator).to_have_text(f"{expected_number} Products")
+    with page.expect_response(f"{API_URL}/catalog/products?sortBy*") as response_info:
+        collection_locator.scroll_into_view_if_needed()
+        collection_locator.click()
+        response = response_info.value.json()
+        expected_product_list = response.get("data").get("products")[0].get("products")
+    card_locator = page.locator(".ecommerce-card")
+    expect(card_locator).to_have_count(expected_number)
+    i = 0
+    for locator in locator_gen(card_locator):
+        log.info(expected_product_list[i].values())
+        expected_name = expected_product_list[i].get("descriptionShort")
+        expected_code = expected_product_list[i].get("styleCode")
+        expected_code = f"Style Code: {expected_code}"
+        expected_wsp = expected_product_list[i].get("wholesalePrice")
+        expected_wsp = convert_to_currency(expected_wsp)
+        expected_rrp = expected_product_list[i].get("retailPrice")
+        expected_rrp = str(round(float(expected_rrp)))
+        expected_rrp = f"RRP: {convert_to_currency(expected_rrp)}"
+        expect(locator).to_be_visible()
+        image_locator = locator.locator("img")
+        expect(image_locator).to_be_visible()
         name_locator = locator.locator(".product-name a")
         expect(name_locator).to_have_text(expected_name)
         code_locator = locator.locator(".product-style-code")

@@ -44,12 +44,12 @@ def check_existing_user(context: BrowserContext, role: str, username: str, passw
     page = context.new_page()
     page.on("response", lambda response: response_list.append(response))
     page.goto("/")
-    page.locator('.cursor-pointer').click()
     page.locator('[name="login-email"]').fill(username)
+    page.locator(".cursor-pointer").click()
     page.locator('[name="login-password"]').fill(password)
-    page.locator('[type="submit"]').click()
-    page.wait_for_load_state("networkidle")
-    expect(page).to_have_url("/dashboard")
+    page.locator("[type='submit']").click()
+    order_table_locator = page.locator(".card table tbody")
+    expect(order_table_locator).to_be_visible()
     order_rows_locator = page.locator(".card table tbody tr")
     assert order_rows_locator.count() > 1
     # Wishlists for retailer and collections for brand
@@ -57,8 +57,10 @@ def check_existing_user(context: BrowserContext, role: str, username: str, passw
     assert rows_locator.count() > 1
     upcoming_rows_locator = page.locator(".upcoming-deadlines table tbody tr")
     if role == "retailer":
+        log.info("upcoming_rows_locator.count() > 1")
         assert upcoming_rows_locator.count() > 1
     else:
+        log.info("upcoming_rows_locator.count() == 0")
         assert upcoming_rows_locator.count() == 0
     dashboard_url = f"{API_URL}/dashboard"
     collection_url = f"{API_URL}/catalog/collection-deadline-list"
@@ -131,6 +133,7 @@ class TestUsers:
         email = f"{self.retailer_username}@{EMAIL_DOMAIN}"
         page.goto("/")
         page.locator('[name="login-email"]').fill(email)
+        page.locator(".cursor-pointer").click()
         page.locator('[name="login-password"]').fill(self.retailer_password)
         page.locator('[type="submit"]').click()
         page.wait_for_load_state("networkidle")
@@ -149,6 +152,7 @@ class TestUsers:
         email = f"{self.brand_username}@{EMAIL_DOMAIN}"
         page.goto("/")
         page.locator('[name="login-email"]').fill(email)
+        page.locator(".cursor-pointer").click()
         page.locator('[name="login-password"]').fill(self.brand_password)
         page.locator('[type="submit"]').click()
         page.wait_for_load_state("networkidle")
@@ -156,9 +160,10 @@ class TestUsers:
         welcome_locator = page.locator(".for-welcome-content")
         expect(welcome_locator).to_be_visible()
 
+    @pytest.mark.custom
     def test_existing_retailer_login(self, context):
         check_existing_user(context, "retailer", LOGIN_RETAILER, PASSWORD_RETAILER)
 
-
+    @pytest.mark.custom
     def test_existing_brand_login(self, context):
         check_existing_user(context, "brand", LOGIN_BRAND, PASSWORD_BRAND)

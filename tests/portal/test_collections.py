@@ -59,17 +59,17 @@ def upload_collection(browser_context, admin_api_client):
     page.locator("#intro_collection_availability").click()
     page.locator("text=In Stock").click()
     page.locator("#intro_collection_end_date").click()
-    page.locator(f"[aria-label='{day}']").click()
+    page.locator(f".open [aria-label='{day}']").click()
     page.locator("#intro_collection_products").set_input_files(MAIN_COLLECTION_PATH)
     page.locator(".logo-preview").set_input_files(MAIN_COLLECTION_IMAGE_PATH)
     page.locator("button", has_text="Crop").click()
     with page.expect_response(
-        lambda response: response.url == f"{API_URL}/catalog/collections"
+        lambda response: response.url == f"{API_URL}/v2/catalog/collections"
         and response.request.method == "GET"
     ) as response_info:
         page.locator("[type='submit']").click()
         response = response_info.value.json()
-        collections = response.get("data")
+        collections = response.get("data").get("collections")
         collection_id = next(
             item.get("_id") for item in collections if item.get("description") == name
         )
@@ -121,7 +121,6 @@ def test_upload_collection(upload_collection):
     page.wait_for_load_state("networkidle")
 
 
-@pytest.mark.custom
 def test_retailer_opens_collection(browser_context):
     brand_name = "Demo Brand Arsen"
     collection_name = "Demo Brand Arsen Collection"
@@ -142,7 +141,7 @@ def test_retailer_opens_collection(browser_context):
         collection_locator.scroll_into_view_if_needed()
         collection_locator.click()
         response = response_info.value.json()
-        expected_product_list = response.get("data").get("products")[0].get("products")
+        expected_product_list = [product for products in response.get("data").get("products") for product in products.get("products")]
     card_locator = page.locator(".ecommerce-card")
     expect(card_locator).to_have_count(expected_number)
     i = 0

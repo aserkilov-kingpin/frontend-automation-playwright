@@ -20,6 +20,8 @@
 5. Upgrade packages:
    - Windows Powershell:
      * `pip freeze | %{$_.split('==')[0]} | %{pip install --upgrade $_}`
-6. Run tests
-   * `pytest --base-url=https://dev.kingpin.global --host=https://dev.kingpin.global --api=https://api-dev.kingpin.global --retailer-username=${email} --retailer-password=${password} --brand-username=${email} --brand-password=${password} --log-cli-level=INFO -s tests\portal --no-header`
+6. Install playwright:
+   * `playwright install`
+7. Run tests
+   * `pytest --base-url=https://dev.kingpin.global --host=https://dev.kingpin.global --api=https://api-dev.kingpin.global --log-cli-level=INFO -s tests\portal --no-header`
 
